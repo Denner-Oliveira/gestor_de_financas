@@ -14,7 +14,7 @@
   justify-content: space-between;
   max-width: 1180px;
   margin: 0 auto;
-  padding: 28px 32px;
+  padding: 12px 16px;
 }
 
 .brand {
@@ -250,7 +250,7 @@ button.secondary {
 .dashboard-content {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 42px 32px 80px;
+  padding: 20px 32px 80px;
 }
 
 .dashboard-heading,
@@ -366,8 +366,9 @@ button.secondary {
   gap: 10px;
   max-height: 420px;
   margin-top: 22px;
-  padding-right: 8px;
+  padding: 0 8px 10px 0;
   overflow-y: auto;
+  scroll-padding-bottom: 10px;
 }
 
 .movement-item {
@@ -483,6 +484,65 @@ button.secondary {
   background: #fef2f2;
 }
 
+.report-section {
+  margin-top: 18px;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 12px 30px rgb(37 99 235 / 6%);
+}
+
+.report-section h2 {
+  margin: 10px 0 0;
+  font-size: 1.8rem;
+  text-transform: capitalize;
+}
+
+.report-grid,
+.report-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.report-columns {
+  padding-top: 22px;
+  border-top: 1px solid #eef2f7;
+}
+
+.report-card {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.report-card span,
+.report-card small,
+.report-columns h3 {
+  color: #64748b;
+}
+
+.report-card strong {
+  font-size: 1.35rem;
+}
+
+.report-columns h3 {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+}
+
+.report-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eef2f7;
+}
+
 .empty-state {
   color: #64748b;
 }
@@ -515,6 +575,18 @@ button.secondary {
   font: inherit;
 }
 
+.import-help {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.import-file {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
 @media (max-width: 760px) {
   .welcome {
     grid-template-columns: 1fr;
@@ -536,9 +608,14 @@ button.secondary {
     grid-template-columns: 1fr;
   }
 
+  .report-grid,
+  .report-columns {
+    grid-template-columns: 1fr;
+  }
+
   .movement-list {
     max-height: none;
-    padding-right: 0;
+    padding: 0;
     overflow-y: visible;
   }
 

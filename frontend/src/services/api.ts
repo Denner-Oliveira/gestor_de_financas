@@ -113,6 +113,30 @@ export async function saveTransaction(type: 'income' | 'expense', payload: objec
   })
 }
 
+export async function importTransactions(file: File) {
+  const formData = new FormData()
+  formData.append('arquivo', file)
+  return fetch(`${API_URL}/importacoes/lancamentos`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: formData,
+  })
+}
+
+export async function downloadImportTemplate() {
+  const response = await fetch(`${API_URL}/importacoes/modelo`, {
+    headers: authHeaders(),
+  })
+  if (!response.ok) throw new Error('Não foi possível baixar o modelo.')
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'modelo-lancamentos.xlsx'
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
 export async function updateTransaction(
   type: 'income' | 'expense',
   id: number,
