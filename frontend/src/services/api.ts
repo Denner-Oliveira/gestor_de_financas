@@ -31,6 +31,43 @@ export async function register(email: string, password: string) {
   }
 }
 
+export async function updateUser(payload: {
+    email?: string
+    senha_atual: string
+    nova_senha?: string
+  }) {
+    const response = await fetch(`${API_URL}/auth/me`, {
+      method: 'PATCH',
+      headers: authHeaders(true),
+      body: JSON.stringify(payload),
+    })
+    if (!response.ok) {
+      const data = await response.json().catch(() => null) as { detail?: string } | null
+      throw new Error(data?.detail ?? 'Não foi possível atualizar o usuário.')
+    }
+    return response.json() as Promise<{ email: string }>
+}
+
+export async function requestPasswordReset(email: string) {
+    const response = await fetch(`${API_URL}/auth/recuperar-senha`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+    if (!response.ok) throw new Error('Não foi possível solicitar a recuperação.')
+}
+
+export async function resetPassword(token: string, password: string) {
+    const response = await fetch(`${API_URL}/auth/redefinir-senha`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, nova_senha: password }),
+    })
+    if (!response.ok) {
+      const data = await response.json().catch(() => null) as { detail?: string } | null
+      throw new Error(data?.detail ?? 'Link inválido ou expirado.')
+    }
+}
 export async function fetchDashboard(year: number, month: number, accountId: string) {
   const filter = accountId ? `&conta_id=${accountId}` : ''
   const query = `ano=${year}&mes=${month}${filter}`

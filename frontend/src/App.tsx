@@ -8,6 +8,8 @@ function App() {
   const [authenticated, setAuthenticated] = useState(Boolean(localStorage.getItem('access_token')))
   const [email, setEmail] = useState(localStorage.getItem('user_email') ?? '')
   const [authMode, setAuthMode] = useState<'login' | 'register' | null>(null)
+  const [recoveryMode, setRecoveryMode] = useState(false)
+  const resetToken = new URLSearchParams(window.location.search).get('reset_token') ?? undefined
   const [success, setSuccess] = useState('')
 
   function logout() {
@@ -19,7 +21,7 @@ function App() {
   }
 
   if (authenticated) return <DashboardPage email={email} onLogout={logout} />
-  if (authMode) return <AuthPage registerMode={authMode === 'register'} success={success} onBack={() => setAuthMode(null)} onAuthenticated={(userEmail) => { setEmail(userEmail); setAuthenticated(true) }} onToggle={() => setAuthMode(authMode === 'register' ? 'login' : 'register')} onSuccess={(message) => { setSuccess(message); setAuthMode('login') }} />
+  if (authMode || recoveryMode || resetToken) return <AuthPage registerMode={authMode === 'register'} recoveryMode={recoveryMode} resetToken={resetToken} success={success} onBack={() => { setAuthMode(null); setRecoveryMode(false) }} onAuthenticated={(userEmail) => { setEmail(userEmail); setAuthenticated(true) }} onToggle={() => { setRecoveryMode(false); setAuthMode(authMode === 'register' ? 'login' : 'register') }} onRecovery={() => { setAuthMode(null); setRecoveryMode(true) }} onSuccess={(message) => { setSuccess(message); setRecoveryMode(false); setAuthMode('login'); window.history.replaceState({}, '', window.location.pathname) }} />
   return <LandingPage onLogin={() => { setSuccess(''); setAuthMode('login') }} onRegister={() => { setSuccess(''); setAuthMode('register') }} />
 }
 

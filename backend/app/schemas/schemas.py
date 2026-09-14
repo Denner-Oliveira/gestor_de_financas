@@ -27,6 +27,21 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str = Field(min_length=20)
 
 
+class UsuarioAtualizar(BaseModel):
+    email: EmailStr | None = None
+    senha_atual: str = Field(min_length=8, max_length=128)
+    nova_senha: str | None = Field(default=None, min_length=8, max_length=128)
+
+
+class RecuperacaoSenhaSolicitar(BaseModel):
+    email: EmailStr
+
+
+class RecuperacaoSenhaRedefinir(BaseModel):
+    token: str = Field(min_length=20)
+    nova_senha: str = Field(min_length=8, max_length=128)
+
+
 class ContaFinanceiraCriar(BaseModel):
     nome: str = Field(min_length=1, max_length=100)
     banco: str = Field(min_length=1, max_length=100)

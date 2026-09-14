@@ -44,6 +44,11 @@ def hash_refresh_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
+def criar_token_temporario() -> tuple[str, str]:
+    token = secrets.token_urlsafe(48)
+    return token, hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
 def obter_usuario_atual(
     token: str = Depends(oauth2_scheme),
     sessao: Session = Depends(obter_sessao),
