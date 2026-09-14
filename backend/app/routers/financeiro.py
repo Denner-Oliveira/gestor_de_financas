@@ -17,6 +17,7 @@ from backend.app.models.models import (
 )
 from backend.app.schemas.schemas import (
     ContaFinanceiraCriar,
+    ContaFinanceiraAtualizar,
     ContaFinanceiraResposta,
     CompraCriar,
     CompraAtualizar,
@@ -79,6 +80,43 @@ def listar_contas(
             .order_by(ContaFinanceira.banco, ContaFinanceira.nome)
         )
     )
+
+
+@router.patch("/contas/{conta_id}", response_model=ContaFinanceiraResposta)
+def atualizar_conta(
+    conta_id: int,
+    dados: ContaFinanceiraAtualizar,
+    usuario: Usuario = Depends(obter_usuario_atual),
+    sessao: Session = Depends(obter_sessao),
+):
+    conta = _validar_conta(conta_id, usuario.id, sessao)
+    for campo, valor in dados.model_dump(exclude_unset=True).items():
+        setattr(conta, campo, valor)
+    sessao.commit()
+    sessao.refresh(conta)
+    return conta
+
+
+@router.delete("/contas/{conta_id}", status_code=status.HTTP_204_NO_CONTENT)
+def excluir_conta(
+    conta_id: int,
+    usuario: Usuario = Depends(obter_usuario_atual),
+    sessao: Session = Depends(obter_sessao),
+):
+    conta = _validar_conta(conta_id, usuario.id, sessao)
+    possui_receitas = sessao.scalar(
+        select(Receita.id).where(Receita.conta_id == conta_id).limit(1)
+    )
+    possui_compras = sessao.scalar(
+        select(Compra.id).where(Compra.conta_id == conta_id).limit(1)
+    )
+    if possui_receitas is not None or possui_compras is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Não é possível excluir uma conta que possui movimentações.",
+        )
+    sessao.delete(conta)
+    sessao.commit()
 
 
 @router.post("/receitas", response_model=ReceitaResposta, status_code=status.HTTP_201_CREATED)

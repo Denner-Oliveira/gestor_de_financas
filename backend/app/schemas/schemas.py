@@ -39,6 +39,18 @@ class ContaFinanceiraCriar(BaseModel):
     ]
 
 
+class ContaFinanceiraAtualizar(BaseModel):
+    nome: str | None = Field(default=None, min_length=1, max_length=100)
+    banco: str | None = Field(default=None, min_length=1, max_length=100)
+    tipo: Literal[
+        "cartao_credito",
+        "cartao_debito",
+        "conta_corrente",
+        "conta_poupanca",
+        "dinheiro",
+    ] | None = None
+
+
 class ContaFinanceiraResposta(ContaFinanceiraCriar):
     model_config = ConfigDict(from_attributes=True)
 
