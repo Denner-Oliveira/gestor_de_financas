@@ -54,7 +54,14 @@ export async function requestPasswordReset(email: string) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     })
-    if (!response.ok) throw new Error('Não foi possível solicitar a recuperação.')
+    if (!response.ok) {
+      const data = await response.json().catch(() => null) as { detail?: unknown } | null
+      throw new Error(
+        typeof data?.detail === 'string'
+          ? data.detail
+          : 'Não foi possível solicitar a recuperação.',
+      )
+    }
 }
 
 export async function resetPassword(token: string, password: string) {
@@ -103,5 +110,24 @@ export async function saveTransaction(type: 'income' | 'expense', payload: objec
     method: 'POST',
     headers: authHeaders(true),
     body: JSON.stringify(payload),
+  })
+}
+
+export async function updateTransaction(
+  type: 'income' | 'expense',
+  id: number,
+  payload: object,
+) {
+  return fetch(`${API_URL}/${type === 'income' ? 'receitas' : 'compras'}/${id}`, {
+    method: 'PATCH',
+    headers: authHeaders(true),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteTransaction(type: 'income' | 'expense', id: number) {
+  return fetch(`${API_URL}/${type === 'income' ? 'receitas' : 'compras'}/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
   })
 }
