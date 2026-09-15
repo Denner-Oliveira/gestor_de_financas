@@ -254,15 +254,33 @@ button.secondary {
   position: relative;
 }
 
-.user-button {
-  padding: 10px 14px;
-  color: #172033;
+.profile-avatar-button {
+  display: grid;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid #dbe3f0;
+  border-radius: 50%;
   background: white;
-  border: 1px solid #dbe3f0;
+  cursor: pointer;
 }
 
-.user-button:hover {
-  background: #f8fafc;
+.profile-avatar-button:hover {
+  border-color: #2563eb;
+}
+
+.profile-avatar {
+  display: block;
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+}
+
+.profile-avatar-placeholder {
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  background: #e2e8f0;
+  font-size: 1.7rem;
 }
 
 .dropdown-menu {
@@ -285,6 +303,15 @@ button.secondary {
   color: #64748b;
   font-size: 0.85rem;
   text-overflow: ellipsis;
+}
+
+.profile-photo-preview {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  align-self: center;
+  border: 3px solid #dbeafe;
 }
 
 .dropdown-menu button,

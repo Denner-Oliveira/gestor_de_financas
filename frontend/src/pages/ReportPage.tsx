@@ -2,6 +2,7 @@ import { useEffect, useState, type SubmitEvent } from 'react'
 import type { GeneralReport } from '../types/finance'
 import { fetchGeneralReport } from '../services/api'
 import { formatCurrency } from '../utils/format'
+import { ProfileMenu } from '../components/ProfileMenu'
 
 type Props = { email: string; onBack: () => void; onLogout: () => void }
 type ChartMetric = 'receitas' | 'despesas' | 'saldo'
@@ -131,10 +132,7 @@ export function ReportPage({ email, onBack, onLogout }: Props) {
         <button type="button" className="app-tab" onClick={onBack}>Visão geral</button>
         <button type="button" className="app-tab active" role="tab" aria-selected="true">Relatório geral</button>
       </div>
-      <div className="report-nav-actions">
-        <span className="report-user">{email}</span>
-        <button type="button" className="link-button" onClick={onLogout}>Sair</button>
-      </div>
+      <div className="dashboard-nav"><ProfileMenu email={email} onLogout={onLogout} /></div>
     </nav>
     <section className="dashboard-content report-page">
       <div className="dashboard-heading">

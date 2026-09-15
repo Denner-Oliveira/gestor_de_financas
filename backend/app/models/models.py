@@ -8,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    LargeBinary,
     Numeric,
     String,
     UniqueConstraint,
@@ -24,6 +25,8 @@ class Usuario(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(254), unique=True, index=True, nullable=False)
     senha_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    foto_perfil: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    foto_perfil_tipo: Mapped[str | None] = mapped_column(String(50), nullable=True)
     criado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.current_timestamp(),

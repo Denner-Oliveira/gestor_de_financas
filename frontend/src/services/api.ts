@@ -91,7 +91,30 @@ export async function updateUser(payload: {
       const data = await response.json().catch(() => null) as { detail?: string } | null
       throw new Error(data?.detail ?? 'Não foi possível atualizar o usuário.')
     }
+
     return response.json() as Promise<{ email: string }>
+}
+
+export async function fetchProfilePhoto(): Promise<Blob | null> {
+  const response = await apiFetch(`${API_URL}/auth/me/foto`)
+  if (response.status === 404) return null
+  if (!response.ok) throw new Error('Não foi possível carregar a foto de perfil.')
+  return response.blob()
+}
+
+export async function uploadProfilePhoto(file: File) {
+  const body = new FormData()
+  body.append('arquivo', file)
+  const response = await apiFetch(`${API_URL}/auth/me/foto`, { method: 'POST', body })
+  if (!response.ok) {
+    const data = await response.json().catch(() => null) as { detail?: string } | null
+    throw new Error(data?.detail ?? 'Não foi possível salvar a foto de perfil.')
+  }
+}
+
+export async function deleteProfilePhoto() {
+  const response = await apiFetch(`${API_URL}/auth/me/foto`, { method: 'DELETE' })
+  if (!response.ok) throw new Error('Não foi possível remover a foto de perfil.')
 }
 
 export async function requestPasswordReset(email: string) {

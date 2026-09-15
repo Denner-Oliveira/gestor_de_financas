@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -35,6 +36,8 @@ from backend.app.schemas.schemas import (
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+TIPOS_FOTO_PERFIL = {"image/jpeg", "image/png", "image/webp"}
+TAMANHO_MAXIMO_FOTO = 2 * 1024 * 1024
 
 
 @router.post("/registrar", response_model=UsuarioResposta, status_code=201)
@@ -107,6 +110,41 @@ def atualizar_usuario(
     sessao.commit()
     sessao.refresh(usuario)
     return usuario
+
+
+@router.get("/me/foto")
+def obter_foto_perfil(usuario: Usuario = Depends(obter_usuario_atual)):
+    if usuario.foto_perfil is None or usuario.foto_perfil_tipo is None:
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
+    return Response(content=usuario.foto_perfil, media_type=usuario.foto_perfil_tipo)
+
+
+@router.post("/me/foto", status_code=status.HTTP_204_NO_CONTENT)
+async def atualizar_foto_perfil(
+    arquivo: UploadFile = File(...),
+    usuario: Usuario = Depends(obter_usuario_atual),
+    sessao: Session = Depends(obter_sessao),
+):
+    if arquivo.content_type not in TIPOS_FOTO_PERFIL:
+        raise HTTPException(status_code=415, detail="Use uma imagem JPG, PNG ou WEBP.")
+    conteudo = await arquivo.read(TAMANHO_MAXIMO_FOTO + 1)
+    if len(conteudo) > TAMANHO_MAXIMO_FOTO:
+        raise HTTPException(status_code=413, detail="A foto deve ter no máximo 2 MB.")
+    usuario.foto_perfil = conteudo
+    usuario.foto_perfil_tipo = arquivo.content_type
+    sessao.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.delete("/me/foto", status_code=status.HTTP_204_NO_CONTENT)
+def remover_foto_perfil(
+    usuario: Usuario = Depends(obter_usuario_atual),
+    sessao: Session = Depends(obter_sessao),
+):
+    usuario.foto_perfil = None
+    usuario.foto_perfil_tipo = None
+    sessao.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/recuperar-senha", status_code=202)
