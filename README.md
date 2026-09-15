@@ -27,7 +27,7 @@ planilha XLSX.
   - resumo rápido do mês.
 - Relatório geral com período configurável.
 - Gráficos agrupados por mês, categoria ou conta:
-  - pizza 3D como padrão;
+  - pizza como padrão;
   - barras horizontais;
   - colunas;
   - linha.
