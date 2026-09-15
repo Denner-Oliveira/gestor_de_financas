@@ -163,7 +163,16 @@ def redefinir_senha(
     if usuario is None:
         raise HTTPException(status_code=400, detail="Link inválido ou expirado.")
     usuario.senha_hash = gerar_hash_senha(dados.nova_senha)
-    token.usado_em = datetime.now(timezone.utc)
+    agora = datetime.now(timezone.utc)
+    refresh_tokens = sessao.scalars(
+        select(RefreshToken).where(
+            RefreshToken.usuario_id == usuario.id,
+            RefreshToken.revogado_em.is_(None),
+        )
+    )
+    for refresh_token in refresh_tokens:
+        refresh_token.revogado_em = agora
+    token.usado_em = agora
     sessao.commit()
 
 

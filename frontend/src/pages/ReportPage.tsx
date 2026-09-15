@@ -22,21 +22,9 @@ function slicePath(cx: number, cy: number, radiusX: number, radiusY: number, sta
   return `M ${cx} ${cy} L ${startPoint.x} ${startPoint.y} A ${radiusX} ${radiusY} 0 ${largeArc} 0 ${endPoint.x} ${endPoint.y} Z`
 }
 
-function darkenColor(color: string) {
-  const value = color.slice(1)
-  const channels = [0, 2, 4].map((index) => Math.max(0, Number.parseInt(value.slice(index, index + 2), 16) - 45))
-  return `#${channels.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`
-}
-
 function PieChart({ items, colors }: { items: ChartItem[]; colors: string[] }) {
-  const total = Math.max(items.reduce((sum, item) => sum + Math.abs(item.value), 0), 1)
-  const smallItems = items.filter((item) => Math.abs(item.value) / total < 0.05)
-  const displayItems = smallItems.length > 0
-    ? [
-      ...items.filter((item) => Math.abs(item.value) / total >= 0.05),
-      { label: 'Outros', value: smallItems.reduce((sum, item) => sum + item.value, 0) },
-    ]
-    : items
+  const displayItems = items
+  const useLegend = displayItems.length > 6
   const displayTotal = Math.max(displayItems.reduce((sum, item) => sum + Math.abs(item.value), 0), 1)
   const slices = displayItems.map((item, index) => {
     const start = displayItems
@@ -60,22 +48,21 @@ function PieChart({ items, colors }: { items: ChartItem[]; colors: string[] }) {
 
   return <div className="pie-layout">
     <svg className="pie-chart-svg" viewBox="0 0 400 330" role="img" aria-label="Gráfico de pizza com distribuição dos valores">
-      <defs>
-        <filter id="pie-shadow" x="-20%" y="-20%" width="140%" height="160%">
-          <feDropShadow dx="0" dy="8" stdDeviation="7" floodColor="#0f172a" floodOpacity="0.18" />
-        </filter>
-      </defs>
-      <g filter="url(#pie-shadow)">
-        {Array.from({ length: 16 }, (_, depth) => <g key={`depth-${depth}`} transform={`translate(0 ${depth * 1.5})`}>{slices.map((slice) => <path key={`depth-${depth}-${slice.label}`} d={slicePath(200, 142, 112, 62, slice.start, slice.end)} fill={darkenColor(slice.color)} stroke="#ffffff" strokeWidth="1" />)}</g>)}
-        {slices.map((slice) => <path key={slice.label} d={slicePath(200, 142, 112, 62, slice.start, slice.end)} fill={slice.color} stroke="#ffffff" strokeWidth="2" />)}
-      </g>
-      {slices.map((slice) => <g key={`label-${slice.label}`}>
+      {slices.map((slice) => <path key={slice.label} d={slicePath(200, 142, 112, 62, slice.start, slice.end)} fill={slice.color} stroke="#ffffff" strokeWidth="2" />)}
+      {!useLegend && slices.map((slice) => <g key={`label-${slice.label}`}>
         <polyline points={`${slice.point.x},${slice.point.y} ${slice.labelPoint.x},${slice.labelPoint.y} ${slice.right ? slice.labelPoint.x + 8 : slice.labelPoint.x - 8},${slice.labelPoint.y}`} fill="none" stroke="#94a3b8" strokeWidth="1.5" />
         <circle cx={slice.point.x} cy={slice.point.y} r="3" fill={slice.color} stroke="#ffffff" strokeWidth="1" />
         <text x={slice.labelPoint.x + (slice.right ? 12 : -12)} y={slice.labelPoint.y - 3} textAnchor={slice.right ? 'start' : 'end'} className="pie-label">{slice.label}</text>
         <text x={slice.labelPoint.x + (slice.right ? 12 : -12)} y={slice.labelPoint.y + 12} textAnchor={slice.right ? 'start' : 'end'} className="pie-label-value">{formatCurrency(slice.value)}</text>
       </g>)}
     </svg>
+    {useLegend && <div className="pie-legend" aria-label="Legenda das categorias">
+      {slices.map((slice) => <div className="pie-legend-item" key={`legend-${slice.label}`}>
+        <span className="legend-color" style={{ backgroundColor: slice.color }} />
+        <span>{slice.label}</span>
+        <strong>{formatCurrency(slice.value)}</strong>
+      </div>)}
+    </div>}
   </div>
 }
 
@@ -87,7 +74,7 @@ export function ReportPage({ email, onBack, onLogout }: Props) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [chartMetric, setChartMetric] = useState<ChartMetric>('despesas')
-  const [chartGrouping, setChartGrouping] = useState<ChartGrouping>('mes')
+  const [chartGrouping, setChartGrouping] = useState<ChartGrouping>('categoria')
   const [chartType, setChartType] = useState<ChartType>('pizza')
 
   async function loadReport(event?: SubmitEvent<HTMLFormElement>) {
