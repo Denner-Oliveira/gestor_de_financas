@@ -37,3 +37,27 @@ export type Expense = {
   conta_id: number | null
   parcelas: Installment[]
 }
+
+export type GeneralReport = {
+  inicio: string
+  fim: string
+  totais: {
+    receitas: string
+    despesas: string
+    saldo: string
+  }
+  por_conta: Array<{
+    conta: string
+    receitas: string
+    despesas: string
+  }>
+  por_categoria: Array<{
+    categoria: string
+    valor: string
+  }>
+  por_mes: Array<{
+    mes: string
+    receitas: string
+    despesas: string
+  }>
+}

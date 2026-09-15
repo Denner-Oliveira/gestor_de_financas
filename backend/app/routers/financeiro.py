@@ -1,6 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal, ROUND_DOWN
 from io import BytesIO
+from unicodedata import combining, normalize
 
 from openpyxl import Workbook, load_workbook
 from dateutil.relativedelta import relativedelta
@@ -68,6 +69,35 @@ def _texto_importado(valor: object, campo: str, linha: int) -> str:
     return texto
 
 
+def _normalizar_tipo_importado(valor: object, linha: int) -> str:
+    texto = _texto_importado(valor, "tipo", linha)
+    normalizado = normalize("NFKD", texto)
+    normalizado = "".join(caractere for caractere in normalizado if not combining(caractere))
+    normalizado = " ".join(normalizado.casefold().split())
+    tipos = {
+        "receita": "receita",
+        "receitas": "receita",
+        "entrada": "receita",
+        "entradas": "receita",
+        "compra": "compra",
+        "compras": "compra",
+        "despesa": "compra",
+        "despesas": "compra",
+        "saida": "compra",
+        "saidas": "compra",
+    }
+    tipo = tipos.get(normalizado)
+    if tipo is None:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Linha {linha}: tipo inválido ({texto!r}). "
+                "Use receita ou compra."
+            ),
+        )
+    return tipo
+
+
 def _criar_parcelas(compra: Compra) -> None:
     valor_parcela = (compra.valor_total / compra.quantidade_parcelas).quantize(
         Decimal("0.01"), rounding=ROUND_DOWN
@@ -133,6 +163,117 @@ def listar_contas(
             .order_by(ContaFinanceira.banco, ContaFinanceira.nome)
         )
     )
+
+
+@router.get("/relatorios/geral")
+def relatorio_geral(
+    inicio: date,
+    fim: date,
+    usuario: Usuario = Depends(obter_usuario_atual),
+    sessao: Session = Depends(obter_sessao),
+):
+    if inicio > fim:
+        raise HTTPException(
+            status_code=422,
+            detail="A data inicial deve ser anterior ou igual à data final.",
+        )
+
+    receitas = list(
+        sessao.scalars(
+            select(Receita).where(
+                Receita.usuario_id == usuario.id,
+                Receita.data >= inicio,
+                Receita.data <= fim,
+            )
+        )
+    )
+    compras = list(
+        sessao.scalars(
+            select(Compra)
+            .options(selectinload(Compra.parcelas))
+            .join(Compra.parcelas)
+            .where(
+                Compra.usuario_id == usuario.id,
+                Parcela.data_vencimento >= inicio,
+                Parcela.data_vencimento <= fim,
+            )
+        ).unique()
+    )
+    contas = {
+        conta.id: conta.nome
+        for conta in sessao.scalars(
+            select(ContaFinanceira).where(
+                ContaFinanceira.usuario_id == usuario.id,
+            )
+        )
+    }
+
+    por_conta: dict[int, dict[str, object]] = {
+        conta_id: {"conta": nome, "receitas": Decimal("0"), "despesas": Decimal("0")}
+        for conta_id, nome in contas.items()
+    }
+    por_categoria: dict[str, Decimal] = {}
+    por_mes: dict[str, dict[str, Decimal]] = {}
+
+    for receita in receitas:
+        conta = por_conta.setdefault(
+            receita.conta_id or 0,
+            {"conta": "Conta não identificada", "receitas": Decimal("0"), "despesas": Decimal("0")},
+        )
+        conta["receitas"] += receita.valor
+        mes = receita.data.strftime("%Y-%m")
+        resumo_mes = por_mes.setdefault(
+            mes, {"receitas": Decimal("0"), "despesas": Decimal("0")}
+        )
+        resumo_mes["receitas"] += receita.valor
+
+    for compra in compras:
+        conta = por_conta.setdefault(
+            compra.conta_id or 0,
+            {"conta": "Conta não identificada", "receitas": Decimal("0"), "despesas": Decimal("0")},
+        )
+        for parcela in compra.parcelas:
+            if inicio <= parcela.data_vencimento <= fim:
+                conta["despesas"] += parcela.valor
+                por_categoria[compra.categoria] = (
+                    por_categoria.get(compra.categoria, Decimal("0")) + parcela.valor
+                )
+                mes = parcela.data_vencimento.strftime("%Y-%m")
+                resumo_mes = por_mes.setdefault(
+                    mes, {"receitas": Decimal("0"), "despesas": Decimal("0")}
+                )
+                resumo_mes["despesas"] += parcela.valor
+
+    total_receitas = sum((receita.valor for receita in receitas), Decimal("0"))
+    total_despesas = sum(
+        (
+            parcela.valor
+            for compra in compras
+            for parcela in compra.parcelas
+            if inicio <= parcela.data_vencimento <= fim
+        ),
+        Decimal("0"),
+    )
+    return {
+        "inicio": inicio,
+        "fim": fim,
+        "totais": {
+            "receitas": total_receitas,
+            "despesas": total_despesas,
+            "saldo": total_receitas - total_despesas,
+        },
+        "por_conta": list(por_conta.values()),
+        "por_categoria": [
+            {"categoria": categoria, "valor": valor}
+            for categoria, valor in sorted(
+                por_categoria.items(), key=lambda item: item[1], reverse=True
+            )
+        ],
+        "por_mes": [
+            {"mes": mes, **valores}
+            for mes, valores in sorted(por_mes.items())
+        ],
+    }
 
 
 @router.get("/importacoes/modelo")
@@ -211,7 +352,11 @@ def importar_lancamentos(
         raise HTTPException(status_code=422, detail="Arquivo XLSX inválido.") from exc
 
     worksheet = workbook.active
-    cabecalho = tuple(str(valor).strip().lower() if valor is not None else "" for valor in next(worksheet.iter_rows(values_only=True), ()))
+    linhas = worksheet.iter_rows(values_only=True)
+    cabecalho = tuple(
+        str(valor).strip().lower() if valor is not None else ""
+        for valor in next(linhas, ())
+    )
     if cabecalho != IMPORT_HEADERS:
         raise HTTPException(
             status_code=422,
@@ -228,13 +373,11 @@ def importar_lancamentos(
         )
     }
     pendentes: list[tuple[str, dict[str, object]]] = []
-    for numero_linha, valores in enumerate(worksheet.iter_rows(values_only=True), start=2):
+    for numero_linha, valores in enumerate(linhas, start=2):
         if not any(valor is not None and str(valor).strip() for valor in valores):
             continue
         dados = dict(zip(IMPORT_HEADERS, valores, strict=False))
-        tipo = _texto_importado(dados["tipo"], "tipo", numero_linha).casefold()
-        if tipo not in {"receita", "compra"}:
-            raise HTTPException(status_code=422, detail=f"Linha {numero_linha}: tipo deve ser receita ou compra.")
+        tipo = _normalizar_tipo_importado(dados["tipo"], numero_linha)
         nome_conta = _texto_importado(dados["conta"], "conta", numero_linha)
         if nome_conta.casefold() not in contas:
             raise HTTPException(
@@ -515,6 +658,8 @@ def atualizar_compra(
             )
             valores = [valor_parcela] * compra.quantidade_parcelas
             valores[-1] += compra.valor_total - sum(valores)
+            compra.parcelas.clear()
+            sessao.flush()
             compra.parcelas = [
                 Parcela(
                     numero=numero,

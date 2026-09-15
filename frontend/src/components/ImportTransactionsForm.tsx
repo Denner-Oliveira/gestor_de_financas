@@ -33,7 +33,13 @@ export function ImportTransactionsForm({ onClose, onImported }: Props) {
       setMessage(`${data.importados} lançamento(s) importado(s) com sucesso.`)
       onImported()
     } catch (importError) {
-      setError(importError instanceof Error ? importError.message : 'Não foi possível importar o arquivo.')
+      setError(
+        importError instanceof TypeError
+          ? 'Não foi possível conectar à API. Confirme se o backend está ativo e se o frontend está usando a porta autorizada.'
+          : importError instanceof Error
+            ? importError.message
+            : 'Não foi possível importar o arquivo.',
+      )
     } finally {
       setLoading(false)
     }
