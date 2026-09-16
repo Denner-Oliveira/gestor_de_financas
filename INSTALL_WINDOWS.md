@@ -58,7 +58,7 @@ alembic upgrade head
 
 ```powershell
 cd ..
-uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
+uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## 7) Instalar dependências do frontend
@@ -74,11 +74,15 @@ npm install
 npm run dev
 ```
 
-Acesse:
+No computador, acesse:
 
 ```text
 http://127.0.0.1:5173
 ```
+
+Para acessar por outro dispositivo conectado à mesma rede Wi-Fi, descubra o IPv4
+do computador com `ipconfig` e abra `http://SEU_IPV4:5173` no dispositivo.
+Use o mesmo IPv4 para a API, na porta `8000`.
 
 ## 9) Problemas comuns
 

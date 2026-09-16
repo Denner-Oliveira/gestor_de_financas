@@ -955,6 +955,16 @@ button.secondary {
 }
 
 @media (max-width: 760px) {
+  .dashboard-content {
+    padding: 16px 12px 56px;
+  }
+
+  .movements-section,
+  .accounts-section,
+  .report-section {
+    padding: 16px;
+  }
+
   .welcome {
     grid-template-columns: 1fr;
     gap: 48px;
@@ -1025,10 +1035,61 @@ button.secondary {
     width: 100%;
   }
 
+  .quick-actions {
+    flex-wrap: wrap;
+  }
+
+  .quick-actions button {
+    flex: 1 1 100%;
+  }
+
+  .movements-section h2,
+  .accounts-section h2,
+  .report-section h2 {
+    font-size: 1.4rem;
+  }
+
+  .account-filter select {
+    width: 100%;
+    min-width: 0;
+  }
+
   .movement-list {
     max-height: none;
     padding: 0;
     overflow-y: visible;
+  }
+
+  .movement-item {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .movement-details {
+    min-width: 0;
+  }
+
+  .movement-details strong {
+    overflow-wrap: anywhere;
+  }
+
+  .movement-item > .income,
+  .movement-item > .expense {
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  .movement-actions {
+    grid-column: 2 / -1;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .movement-actions button {
+    padding: 6px 8px;
   }
 
   .month-switcher {

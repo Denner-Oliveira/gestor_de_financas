@@ -179,8 +179,19 @@ Revise a migration gerada antes de executar `alembic upgrade head`.
 Na raiz do projeto:
 
 ```bash
-uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
+uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
 ```
+
+Para acessar pela rede local, use o IPv4 do computador (obtido com `ipconfig` no
+Windows ou `ip addr` no Linux) no navegador do outro dispositivo:
+
+```text
+http://SEU_IPV4:5173
+```
+
+O frontend usa automaticamente esse mesmo endereço para chamar a API na porta
+`8000`. Computador e celular precisam estar na mesma rede Wi-Fi, e o Firewall
+do sistema deve permitir as portas `5173` e `8000`.
 
 Documentação interativa da API:
 
